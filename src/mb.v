@@ -12,6 +12,10 @@ fn Mb.new() &Mb {
 	return r
 }
 
+fn (mut m Mb) tick() {
+	m.cpu.tick()
+}
+
 // fn (m Mb) get_byte(addr u32) i8 {
 // 	return m.ram.a
 // }

@@ -92,7 +92,6 @@ enum InstructionType as u8 {
 	bit
 	res
 	set
-	lock
 }
 
 enum ConditionType as u8 {
@@ -338,7 +337,7 @@ const instructions = [
 	Instruction{in_type: InstructionType.ret, mode: AddressMode.imp, reg_1: RegisterType.none, reg_2: RegisterType.none, cond: ConditionType.nc}, // 0xD0 RET NC
 	Instruction{in_type: InstructionType.pop, mode: AddressMode.r, reg_1: RegisterType.de}, // 0xD1 POP DE
 	Instruction{in_type: InstructionType.jp, mode: AddressMode.d16, reg_1: RegisterType.none, reg_2: RegisterType.none, cond: ConditionType.nc}, // 0xD2 JP NC,D16
-	Instruction{in_type: InstructionType.lock}, // 0xD3 INVALID
+	Instruction{in_type: InstructionType.none}, // 0xD3 INVALID
 	Instruction{in_type: InstructionType.call, mode: AddressMode.d16, reg_1: RegisterType.none, reg_2: RegisterType.none, cond: ConditionType.nc}, // 0xD4 CALL NC,D16
 	Instruction{in_type: InstructionType.push, mode: AddressMode.r, reg_1: RegisterType.de}, // 0xD5 PUSH DE
 	Instruction{in_type: InstructionType.sub, mode: AddressMode.r_d8, reg_1: RegisterType.a}, // 0xD6 SUB A,D8
@@ -346,26 +345,26 @@ const instructions = [
 	Instruction{in_type: InstructionType.ret, mode: AddressMode.imp, reg_1: RegisterType.none, reg_2: RegisterType.none, cond: ConditionType.c}, // 0xD8 RET C
 	Instruction{in_type: InstructionType.reti}, // 0xD9 RETI
 	Instruction{in_type: InstructionType.jp, mode: AddressMode.d16, reg_1: RegisterType.none, reg_2: RegisterType.none, cond: ConditionType.c}, // 0xDA JP C,D16
-	Instruction{in_type: InstructionType.lock}, // 0xDB INVALID
+	Instruction{in_type: InstructionType.none}, // 0xDB INVALID
 	Instruction{in_type: InstructionType.call, mode: AddressMode.d16, reg_1: RegisterType.none, reg_2: RegisterType.none, cond: ConditionType.c}, // 0xDC CALL C,D16
-	Instruction{in_type: InstructionType.lock}, // 0xDD INVALID
+	Instruction{in_type: InstructionType.none}, // 0xDD INVALID
 	Instruction{in_type: InstructionType.sbc, mode: AddressMode.r_d8, reg_1: RegisterType.a}, // 0xDE SBC A,D8
 	Instruction{in_type: InstructionType.rst, mode: AddressMode.imp, reg_1: RegisterType.none, reg_2: RegisterType.none, cond: ConditionType.none, param: 0x18}, // 0xDF RST $18
 	// 0xE_
 	Instruction{in_type: InstructionType.ldh, mode: AddressMode.a8_r, reg_1: RegisterType.none, reg_2: RegisterType.a}, // 0xE0 LDH [a8],A
 	Instruction{in_type: InstructionType.pop, mode: AddressMode.r, reg_1: RegisterType.hl}, // 0xE1 POP HL
 	Instruction{in_type: InstructionType.ldh, mode: AddressMode.mr_r, reg_1: RegisterType.c, reg_2: RegisterType.a}, // 0xE2 LDH [C],A
-	Instruction{in_type: InstructionType.lock}, // 0xE3 INVALID
-	Instruction{in_type: InstructionType.lock}, // 0xE4 INVALID
+	Instruction{in_type: InstructionType.none}, // 0xE3 INVALID
+	Instruction{in_type: InstructionType.none}, // 0xE4 INVALID
 	Instruction{in_type: InstructionType.push, mode: AddressMode.r, reg_1: RegisterType.hl}, // 0xE5 PUSH NL
 	Instruction{in_type: InstructionType.and, mode: AddressMode.r_d8, reg_1: RegisterType.a}, // 0xE6 AND A,D8
 	Instruction{in_type: InstructionType.rst, mode: AddressMode.imp, reg_1: RegisterType.none, reg_2: RegisterType.none, cond: ConditionType.none, param: 0x20}, // 0xE7 RST $20
 	Instruction{in_type: InstructionType.add, mode: AddressMode.r_d8, reg_1: RegisterType.sp}, // 0xE8 ADD SP,D8
 	Instruction{in_type: InstructionType.jp, mode: AddressMode.r, reg_1: RegisterType.hl}, // 0xE9 JP HL
 	Instruction{in_type: InstructionType.ld, mode: AddressMode.a16_r, reg_1: RegisterType.none, reg_2: RegisterType.a}, // 0xEA DL [a16],A
-	Instruction{in_type: InstructionType.lock}, // 0xEB INVALID
-	Instruction{in_type: InstructionType.lock}, // 0xEC INVALID
-	Instruction{in_type: InstructionType.lock}, // 0xED INVALID
+	Instruction{in_type: InstructionType.none}, // 0xEB INVALID
+	Instruction{in_type: InstructionType.none}, // 0xEC INVALID
+	Instruction{in_type: InstructionType.none}, // 0xED INVALID
 	Instruction{in_type: InstructionType.xor, mode: AddressMode.r_d8, reg_1: RegisterType.a}, // 0xEE XOR A,D8
 	Instruction{in_type: InstructionType.rst, mode: AddressMode.imp, reg_1: RegisterType.none, reg_2: RegisterType.none, cond: ConditionType.none, param: 0x28}, // 0xEF RST $28
 	// 0xF_
@@ -373,7 +372,7 @@ const instructions = [
 	Instruction{in_type: InstructionType.pop, mode: AddressMode.r, reg_1: RegisterType.af}, // 0xF1 POP AF
 	Instruction{in_type: InstructionType.ldh, mode: AddressMode.r_mr, reg_1: RegisterType.a, reg_2: RegisterType.c}, // 0xF2 LDH A,[C]
 	Instruction{in_type: InstructionType.di}, // 0xF3 DI
-	Instruction{in_type: InstructionType.lock}, // 0xF4 INVALID
+	Instruction{in_type: InstructionType.none}, // 0xF4 INVALID
 	Instruction{in_type: InstructionType.push, mode: AddressMode.r, reg_1: RegisterType.af}, // 0xF5 PUSH AF
 	Instruction{in_type: InstructionType.or, mode: AddressMode.r_d8, reg_1: RegisterType.a}, // 0xF6 OR A,D8
 	Instruction{in_type: InstructionType.rst, mode: AddressMode.imp, reg_1: RegisterType.none, reg_2: RegisterType.none, cond: ConditionType.none, param: 0x30}, // 0xF7 RST $30
@@ -381,53 +380,9 @@ const instructions = [
 	Instruction{in_type: InstructionType.ld, mode: AddressMode.r_r, reg_1: RegisterType.sp, reg_2: RegisterType.hl}, // 0xF9 LD SP,HL
 	Instruction{in_type: InstructionType.ld, mode: AddressMode.r_a16, reg_1: RegisterType.a}, // 0xFA LD A,[a16]
 	Instruction{in_type: InstructionType.ei}, // 0xFB EI
-	Instruction{in_type: InstructionType.lock}, // 0xFC INVALID
-	Instruction{in_type: InstructionType.lock}, // 0xFD INVALID
+	Instruction{in_type: InstructionType.none}, // 0xFC INVALID
+	Instruction{in_type: InstructionType.none}, // 0xFD INVALID
 	Instruction{in_type: InstructionType.cp, mode: AddressMode.r_d8, reg_1: RegisterType.a}, // 0xFE CP A,D8
 	Instruction{in_type: InstructionType.rst, mode: AddressMode.imp, reg_1: RegisterType.none, reg_2: RegisterType.none, cond: ConditionType.none, param: 0x38}, // 0xFF RST $38
 ]
 
-const op_len = [1, 3]
-
-fn (mut c Cpu) ld(r16 u8, n16 u16) {
-	match r16 {
-		0 {
-			c.b = u8(n16 >> 8)
-			c.c = u8(n16)
-		}
-		1 {
-			c.d = u8(n16 >> 8)
-			c.e = u8(n16)
-		}
-		2 {
-			c.h = u8(n16 >> 8)
-			c.l = u8(n16)
-		}
-		3 {
-			c.sp = n16
-		}
-		else {}
-	}
-}
-
-fn (mut c Cpu) ld_d(r16 u8, r8 u8) {
-
-}
-
-// NOP
-fn (mut c Cpu) noop() {
-	c.pc++
-	c.cycles += 4
-}
-
-// LD BC,n16
-fn (mut c Cpu) ld_bc_n16(v u16) {
-	c.ld(0, v)
-	c.pc += 3
-	c.cycles += 12
-}
-
-// LD (BC),A
-fn (mut c Cpu) ld_d_bc_a(mut ram &Ram) {
-	// c.ld_d(r16: 0, r8: 7)
-}

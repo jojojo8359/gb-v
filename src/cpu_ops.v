@@ -42,6 +42,17 @@ enum RegisterType as u8 {
 	pc
 }
 
+const register_lookup := [
+	RegisterType.b,
+	RegisterType.c,
+	RegisterType.d,
+	RegisterType.e,
+	RegisterType.h,
+	RegisterType.l,
+	RegisterType.hl,
+	RegisterType.a
+]
+
 enum InstructionType as u8 {
 	none
 	nop
@@ -80,18 +91,6 @@ enum InstructionType as u8 {
 	ei
 	rst
 	err
-	// CB
-	rlc
-	rrc
-	rl
-	rr
-	sla
-	sra
-	swap
-	srl
-	bit
-	res
-	set
 }
 
 enum ConditionType as u8 {

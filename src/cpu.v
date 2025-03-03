@@ -31,11 +31,6 @@ pub fn (c Cpu) str() string {
 }
 
 @[inline]
-fn bit(a u8, n u8) bool {
-	return a & (1 << n) > 0
-}
-
-@[inline]
 fn combine_u8(upper u8, lower u8) u16 {
 	return (u16(upper) << 8) + lower
 }
@@ -71,7 +66,7 @@ fn (c Cpu) get_c() bool {
 
 @[inline]
 fn (mut c Cpu) set_flag(v bool, n u8) {
-	if v { c.f |= (1 << n) } else { c.f &= ~(1 << n) }
+	c.f = set_bit(c.f, n, v)
 }
 
 @[inline]

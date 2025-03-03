@@ -30,6 +30,12 @@ pub fn (c Cpu) str() string {
 	return '{a=${c.a}, f=${c.f}, b=${c.b}, c=${c.c}, d=${c.d}, e=${c.e}, h=${c.h}, l=${c.l}, ir=${c.ir}/0x${c.ir:x}, ie=${c.ie}, sp=${c.sp}/0x${c.sp:x}, pc=${c.pc}/0x${c.pc:x}, m=${c.m}, flags(ZNHC)=${u8(c.get_z())}${u8(c.get_n())}${u8(c.get_h())}${u8(c.get_c())}}'
 }
 
+@[inline]
+fn bit(a u8, n u8) bool {
+	return a & (1 << n) > 0
+}
+
+@[inline]
 fn combine_u8(upper u8, lower u8) u16 {
 	return (u16(upper) << 8) + lower
 }
@@ -45,22 +51,22 @@ const c_bit := 4
 
 @[inline]
 fn (c Cpu) get_z() bool {
-	return (c.f & (1 << z_bit)) > 0
+	return bit(c.f, z_bit)
 }
 
 @[inline]
 fn (c Cpu) get_n() bool {
-	return (c.f & (1 << n_bit)) > 0
+	return bit(c.f, n_bit)
 }
 
 @[inline]
 fn (c Cpu) get_h() bool {
-	return (c.f & (1 << h_bit)) > 0
+	return bit(c.f, h_bit)
 }
 
 @[inline]
 fn (c Cpu) get_c() bool {
-	return (c.f & (1 << c_bit)) > 0
+	return bit(c.f, c_bit)
 }
 
 @[inline]
@@ -748,7 +754,7 @@ fn (mut c Cpu) tick(pr bool) {
 				}
 				2 {
 					reg := register_lookup[c.cb & 0b111]
-					bit := (c.cb >> 3) & 0b111
+					bit_ := (c.cb >> 3) & 0b111
 					bit_op := (c.cb >> 6) & 0b11
 					mut reg_val := c.read_reg8(reg)
 					mut done := false
@@ -756,8 +762,7 @@ fn (mut c Cpu) tick(pr bool) {
 						1 {
 							// BIT
 							if pr { println("cb: bit called (m=${c.m})") }
-							// TODO: make and use bit function
-							c.set_z((reg_val & (1 << bit)) == 0)
+							c.set_z(bit(reg_val, bit_))
 							c.set_n(false)
 							c.set_h(true)
 							done = true
@@ -765,21 +770,21 @@ fn (mut c Cpu) tick(pr bool) {
 						2 {
 							// RST
 							if pr { println("cb: rst called (m=${c.m})") }
-							reg_val &= ~(1 << bit)
+							reg_val &= ~(1 << bit_)
 							c.set_reg8(reg, reg_val)
 							done = true
 						}
 						3 {
 							// SET
 							if pr { println("cb: set called (m=${c.m})") }
-							reg_val |= (1 << bit)
+							reg_val |= (1 << bit_)
 							c.set_reg8(reg, reg_val)
 							done = true
 						}
 						else {}
 					}
 					if !done {
-						match bit {
+						match bit_ {
 							0 {
 								// RLC
 								if pr { println("cb: rlc called (not implemented)") }

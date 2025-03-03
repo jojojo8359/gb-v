@@ -93,6 +93,16 @@ fn (mut c Cpu) set_hl(v u16) {
 	c.h, c.l = split_u16(v)
 }
 
+@[inline]
+fn msb(v u16) u8 {
+	return u8(v >> 8)
+}
+
+@[inline]
+fn lsb(v u16) u8 {
+	return u8(v)
+}
+
 fn (c Cpu) read_reg8(rt RegisterType) u8 {
 	match rt {
 		.a { return c.a }
@@ -159,9 +169,7 @@ fn (c Cpu) cond_true(ct ConditionType) bool {
 		.z { return c.get_z() == true }
 		.nc { return c.get_c() == false }
 		.c { return c.get_c() == true }
-		else {
-			panic("Given condition type ${ct} is not valid for checking flags in non-cb instructions!")
-		}
+		.none { return true }
 	}
 }
 
@@ -179,9 +187,9 @@ fn (mut c Cpu) tick(pr bool) {
 			c.m = 0
 		}
 		.ld {
-			if pr { println("ld called") }
 			match next_inst.mode {
 				.r_d16 {
+					if pr { println("ld r,d16 called (m=${c.m})") }
 					match c.m {
 						1 {
 							c.z = c.read_memory(c.pc)
@@ -198,6 +206,10 @@ fn (mut c Cpu) tick(pr bool) {
 								.bc {
 									c.b = c.w
 									c.c = c.z
+								}
+								.de {
+									c.d = c.w
+									c.e = c.z
 								}
 								.hl {
 									c.h = c.w
@@ -218,21 +230,99 @@ fn (mut c Cpu) tick(pr bool) {
 					}
 				}
 				.mr_r {
-					println("mr,r not implemented")
+					if pr { println("ld: mr,r called (m=${c.m})") }
+					match c.m {
+						1 {
+							c.write_memory(c.read_reg16(next_inst.reg_1), c.read_reg8(next_inst.reg_2))
+						}
+						2 {
+							c.ir = c.fetch_cycle(c.pc)
+							c.pc++
+							c.m = 0
+						}
+						else {
+							println("ld: mr,r mode: invalid cycle ${c.m}")
+						}
+					}
 				}
 				.r_d8 {
-					println("r,d8 not implemented")
+					if pr { println("ld r,d8 called (m=${c.m})") }
+					match c.m {
+						1 {
+							c.z = c.read_memory(c.pc)
+							c.pc++
+						}
+						2 {
+							c.ir = c.fetch_cycle(c.pc)
+							c.pc++
+							c.set_reg8(next_inst.reg_1, c.z)
+							c.m = 0
+						}
+						else {
+							println("ld: r,d8 mode: invalid cycle ${c.m}")
+						}
+					}
 				}
 				.a16_r {
-					println("a16,r not implemented")
+					if pr { println("ld: a16,r called (m=${c.m})") }
+					match c.m {
+						1 {
+							c.z = c.read_memory(c.pc)
+							c.pc++
+						}
+						2 {
+							c.w = c.read_memory(c.pc)
+							c.pc++
+						}
+						3 {
+							c.write_memory(combine_u8(c.w, c.z), c.a)
+						}
+						4 {
+							c.ir = c.fetch_cycle(c.pc)
+							c.pc++
+							c.m = 0
+						}
+						else {
+							println("ld: a16,r mode: invalid cycle ${c.m}")
+						}
+					}
 				}
 				.r_mr {
-					println("r,mr not implemented")
+					if pr { println("ld r,mr called (m=${c.m})") }
+					match c.m {
+						1 {
+							c.z = c.read_memory(c.read_reg16(next_inst.reg_2))
+						}
+						2 {
+							c.ir = c.fetch_cycle(c.pc)
+							c.pc++
+							c.set_reg8(next_inst.reg_1, c.z)
+							c.m = 0
+						}
+						else {
+							println("ld: r,mr mode: invalid cycle ${c.m}")
+						}
+					}
 				}
 				.hli_r {
-					println("hli,r not implemented")
+					if pr { println("ld: hli,r called (m=${c.m})") }
+					match c.m {
+						1 {
+							c.write_memory(c.read_reg16(RegisterType.hl), c.a)
+							c.set_hl(c.read_reg16(RegisterType.hl) + 1)
+						}
+						2 {
+							c.ir = c.fetch_cycle(c.pc)
+							c.pc++
+							c.m = 0
+						}
+						else {
+							println("ld: hli,r mode: invalid cycle ${c.m}")
+						}
+					}
 				}
 				.hld_r {
+					if pr { println("ld hld,r called (m=${c.m})") }
 					match c.m {
 						1 {
 							c.write_memory(c.read_reg16(RegisterType.hl), c.a)
@@ -249,16 +339,83 @@ fn (mut c Cpu) tick(pr bool) {
 						}
 					}
 				}
+				.r_r {
+					if pr { println("ld r,r called") }
+					c.ir = c.fetch_cycle(c.pc)
+					c.pc++
+					c.set_reg8(next_inst.reg_1, c.read_reg8(next_inst.reg_2))
+					c.m = 0
+				}
 				else {
 					println("ld: invalid mode ${next_inst.mode}")
 				}
 			}
 		}
 		.inc {
-			if pr { println("inc called (not implemented)") }
+			match next_inst.mode {
+				.r {
+					match next_inst.reg_1 {
+						.a, .b, .c, .d, .e, .f, .h, .l {
+							if pr { println("inc r (8-bit) called") }
+							result := c.read_reg8(next_inst.reg_1) + 1
+							c.set_reg8(next_inst.reg_1, result)
+							c.set_z(result == 0)
+							c.set_n(false)
+							c.set_h((result & 0x0f) == 0)
+						}
+						.af, .bc, .de, .hl, .sp, .pc {
+							if pr { println("inc r (16-bit) called") }
+							result := c.read_reg16(next_inst.reg_1) + 1
+							c.set_reg16(next_inst.reg_1, result)
+						}
+						else {
+							println("inc: r mode: invalid register ${next_inst.reg_1}")
+						}
+					}
+					c.ir = c.fetch_cycle(c.pc)
+					c.pc++
+					c.m = 0
+				}
+				.mr {
+					println("inc: mr mode: not implemented")
+				}
+				else {
+					println("inc: invalid mode ${next_inst.mode}")
+				}
+			}
 		}
 		.dec {
-			if pr { println("dec called (not implemented)") }
+			match next_inst.mode {
+				.r {
+					match next_inst.reg_1 {
+						.a, .b, .c, .d, .e, .f, .h, .l {
+							if pr { println("dec r (8-bit) called") }
+							result := c.read_reg8(next_inst.reg_1) - 1
+							c.set_reg8(next_inst.reg_1, result)
+							c.set_z(result == 0)
+							c.set_n(true)
+							c.set_h((result & 0x0f) == 0x0f)
+						}
+						.af, .bc, .de, .hl, .sp, .pc {
+							if pr { println("dec r (16-bit) called") }
+							result := c.read_reg16(next_inst.reg_1) - 1
+							c.set_reg16(next_inst.reg_1, result)
+						}
+						else {
+							println("dec: r mode: invalid register ${next_inst.reg_1}")
+						}
+					}
+					c.ir = c.fetch_cycle(c.pc)
+					c.pc++
+					c.m = 0
+				}
+				.mr {
+					println("dec: mr mode: not implemented")
+				}
+				else {
+					println("dec: invalid mode ${next_inst.mode}")
+				}
+			}
 		}
 		.rlca {
 			if pr { println("rlca called (not implemented)") }
@@ -273,10 +430,19 @@ fn (mut c Cpu) tick(pr bool) {
 			if pr { println("stop called (not implemented)") }
 		}
 		.rla {
-			if pr { println("rla called (not implemented)") }
+			if pr { println("rla called") }
+			v := (c.a >> 7) & 1
+			c.a = (v << 1) | u8(c.get_c())
+			c.set_z(false)
+			c.set_n(false)
+			c.set_h(false)
+			c.set_c(v != 0)
+			c.ir = c.fetch_cycle(c.pc)
+			c.pc++
+			c.m = 0
 		}
 		.jr {
-			if pr { println("jr called") }
+			if pr { println("jr called (m=${c.m})") }
 			match c.m {
 				1 {
 					c.z = c.read_memory(c.pc)
@@ -303,7 +469,7 @@ fn (mut c Cpu) tick(pr bool) {
 					c.m = 0
 				}
 				else {
-
+					println("jr: invalid cycle ${c.m}")
 				}
 			}
 		}
@@ -338,10 +504,10 @@ fn (mut c Cpu) tick(pr bool) {
 			if pr { println("and called (not implemented)") }
 		}
 		.xor {
-			if pr { println("xor called") }
 			mut result := 0
 			match next_inst.mode {
 				.r_r {
+					if pr { println("xor r,r called") }
 					match next_inst.reg_2 {
 						.a {
 							result = c.a ^ c.a
@@ -370,9 +536,10 @@ fn (mut c Cpu) tick(pr bool) {
 					}
 				}
 				.r_mr {
+					if pr { println("xor r,mr called") }
 					match next_inst.reg_2 {
 						.hl {
-							println("not implemented")
+							println("xor: r,mr mode: hl not implemented")
 							// TODO: do the thing
 						}
 						else {
@@ -381,7 +548,7 @@ fn (mut c Cpu) tick(pr bool) {
 					}
 				}
 				.r_d8 {
-					println("not implemented")
+					println("xor: r,d8 mode: not implemented")
 					// TODO: do the thing
 				}
 				else {
@@ -401,19 +568,172 @@ fn (mut c Cpu) tick(pr bool) {
 			if pr { println("or called (not implemented)") }
 		}
 		.cp {
-			if pr { println("cp called (not implemented)") }
+			match next_inst.mode {
+				.r_r {
+					if pr { println("cp r,r called") }
+					v := c.read_reg8(next_inst.reg_2)
+					n := i8(c.a) - i8(v)
+					c.set_z(n == 0)
+					c.set_n(true)
+					c.set_h(((i8(c.a) & 0x0f) - (i8(v) & 0x0f)) < 0)
+					c.set_c(n < 0)
+					c.ir = c.fetch_cycle(c.pc)
+					c.pc++
+					c.m = 0
+				}
+				.r_mr {
+					if pr { println("cp r,mr called (m=${c.m})") }
+					match c.m {
+						1 {
+							c.z = c.read_memory(c.read_reg16(RegisterType.hl))
+						}
+						2 {
+							n := i8(c.a) - i8(c.z)
+							c.set_z(n == 0)
+							c.set_n(true)
+							c.set_h(((i8(c.a) & 0x0f) - (i8(c.z) & 0x0f)) < 0)
+							c.set_c(n < 0)
+							c.ir = c.fetch_cycle(c.pc)
+							c.pc++
+							c.m = 0
+						}
+						else {
+							println("cp: r,mr mode: invalid cycle ${c.m}")
+						}
+					}
+				}
+				.r_d8 {
+					if pr { println("cp r,d8 called (m=${c.m})") }
+					match c.m {
+						1 {
+							c.z = c.read_memory(c.pc)
+							c.pc++
+						}
+						2 {
+							n := i8(c.a) - i8(c.z)
+							c.set_z(n == 0)
+							c.set_n(true)
+							c.set_h(((i8(c.a) & 0x0f) - (i8(c.z) & 0x0f)) < 0)
+							c.set_c(n < 0)
+							c.ir = c.fetch_cycle(c.pc)
+							c.pc++
+							c.m = 0
+						}
+						else {
+							println("cp: r,mr mode: invalid cycle ${c.m}")
+						}
+					}
+				}
+				else {
+					println("cp: invalid mode ${next_inst.mode}")
+				}
+			}
 		}
 		.pop {
-			if pr { println("pop called (not implemented)") }
+			if pr { println("pop called (m=${c.m})") }
+			match c.m {
+				1 {
+					c.z = c.read_memory(c.sp)
+					c.sp++
+				}
+				2 {
+					c.w = c.read_memory(c.sp)
+					c.sp++
+				}
+				3 {
+					c.ir = c.fetch_cycle(c.pc)
+					c.pc++
+					c.set_reg16(next_inst.reg_1, combine_u8(c.w, c.z))
+					c.m = 0
+				}
+				else {
+					println("pop: invalid cycle ${c.m}")
+				}
+			}
 		}
 		.jp {
 			if pr { println("jp called (not implemented)") }
 		}
 		.push {
-			if pr { println("push called (not implemented)") }
+			if pr { println("push called (m=${c.m})") }
+			match c.m {
+				1 {
+					c.sp--
+				}
+				2 {
+					c.write_memory(c.sp, msb(c.read_reg16(next_inst.reg_1)))
+					c.sp--
+				}
+				3 {
+					c.write_memory(c.sp, lsb(c.read_reg16(next_inst.reg_1)))
+				}
+				4 {
+					c.ir = c.fetch_cycle(c.pc)
+					c.pc++
+					c.m = 0
+				}
+				else {
+					println("push: invalid cycle ${c.m}")
+				}
+			}
 		}
 		.ret {
-			if pr { println("ret called (not implemented)") }
+			if pr { println("ret called (m=${c.m})") }
+			match next_inst.cond {
+				.none {
+					match c.m {
+						1 {
+							c.z = c.read_memory(c.sp)
+							c.sp++
+						}
+						2 {
+							c.w = c.read_memory(c.sp)
+							c.sp++
+						}
+						3 {
+							c.pc = combine_u8(c.w, c.z)
+						}
+						4 {
+							c.ir = c.fetch_cycle(c.pc)
+							c.pc++
+							c.m = 0
+						}
+						else {
+							println("ret: no condition: invalid cycle ${c.m}")
+						}
+					}
+				}
+				else {
+					match c.m {
+						1 {}
+						2 {
+							if c.cond_true(next_inst.cond) {
+								c.z = c.read_memory(c.sp)
+								c.sp++
+							} else {
+								c.ir = c.fetch_cycle(c.pc)
+								c.pc++
+								c.m = 0
+							}
+						}
+						3 {
+							c.w = c.read_memory(c.sp)
+							c.sp++
+						}
+						4 {
+							c.pc = combine_u8(c.w, c.z)
+						}
+						5 {
+							c.ir = c.fetch_cycle(c.pc)
+							c.pc++
+							c.m = 0
+						}
+						else {
+							println("ret: conditional: invalid cycle ${c.m}")
+						}
+					}
+				}
+			}
 		}
 		.cb {
 			if next_inst.mode != AddressMode.d8 {
@@ -422,7 +742,7 @@ fn (mut c Cpu) tick(pr bool) {
 			match c.m {
 				1 {
 					// get cb opcode
-					if pr { println("cb called") }
+					if pr { println("cb called (m=${c.m})") }
 					c.cb = c.fetch_cycle(c.pc)
 					c.pc++
 				}
@@ -435,7 +755,7 @@ fn (mut c Cpu) tick(pr bool) {
 					match bit_op {
 						1 {
 							// BIT
-							if pr { println("cb: bit called") }
+							if pr { println("cb: bit called (m=${c.m})") }
 							// TODO: make and use bit function
 							c.set_z((reg_val & (1 << bit)) == 0)
 							c.set_n(false)
@@ -444,21 +764,20 @@ fn (mut c Cpu) tick(pr bool) {
 						}
 						2 {
 							// RST
-							if pr { println("cb: rst called") }
+							if pr { println("cb: rst called (m=${c.m})") }
 							reg_val &= ~(1 << bit)
 							c.set_reg8(reg, reg_val)
 							done = true
 						}
 						3 {
 							// SET
-							if pr { println("cb: set called") }
+							if pr { println("cb: set called (m=${c.m})") }
 							reg_val |= (1 << bit)
 							c.set_reg8(reg, reg_val)
 							done = true
 						}
 						else {}
 					}
-					// TODO: get c flag and store it here
 					if !done {
 						match bit {
 							0 {
@@ -471,7 +790,16 @@ fn (mut c Cpu) tick(pr bool) {
 							}
 							2 {
 								// RL
-								if pr { println("cb: rl called (not implemented)") }
+								if pr { println("cb: rl called (m=${c.m})") }
+								old := reg_val
+								reg_val = reg_val << 1
+								reg_val |= u8(c.get_c())
+								c.set_reg8(reg, reg_val)
+								c.set_z(reg_val == 0)
+								c.set_n(false)
+								c.set_h(false)
+								// TODO: Verify this is the correct flag behavior
+								c.set_c(old & 0x80 == 1)
 							}
 							3 {
 								// RR
@@ -508,13 +836,107 @@ fn (mut c Cpu) tick(pr bool) {
 			}
 		}
 		.call {
-			if pr { println("call called (not implemented)") }
+			if pr { println("call called (m=${c.m})") }
+			match c.m {
+				1 {
+					c.z = c.read_memory(c.pc)
+					c.pc++
+				}
+				2 {
+					c.w = c.read_memory(c.pc)
+					c.pc++
+				}
+				3 {
+					if c.cond_true(next_inst.cond) {
+						c.sp--
+					} else {
+						c.ir = c.fetch_cycle(c.pc)
+						c.pc++
+						c.m = 0
+					}
+				}
+				4 {
+					c.write_memory(c.sp, msb(c.pc))
+					c.sp--
+				}
+				5 {
+					c.write_memory(c.sp, lsb(c.pc))
+					c.pc = combine_u8(c.w, c.z)
+				}
+				6 {
+					c.ir = c.fetch_cycle(c.pc)
+					c.pc++
+					c.m = 0
+				}
+				else {
+					println("call: invalid cycle ${c.m}")
+				}
+			}
 		}
 		.reti {
 			if pr { println("reti called (not implemented)") }
 		}
 		.ldh {
-			if pr { println("ldh called (not implemented)") }
+			match next_inst.mode {
+				.a8_r {
+					if pr { println("ldh a8,r called (m=${c.m})") }
+					match c.m {
+						1 {
+							c.z = c.read_memory(c.pc)
+							c.pc++
+						}
+						2 {
+							c.write_memory(combine_u8(0xff, c.z), c.a)
+						}
+						3 {
+							c.ir = c.fetch_cycle(c.pc)
+							c.pc++
+							c.m = 0
+						}
+						else {
+							println("ldh: a8,r mode: invalid cycle ${c.m}")
+						}
+					}
+				}
+				.mr_r {
+					if pr { println("ldh mr,r called (m=${c.m})") }
+					match c.m {
+						1 {
+							c.write_memory(combine_u8(0xff, c.c), c.a)
+						}
+						2 {
+							c.ir = c.fetch_cycle(c.pc)
+							c.pc++
+							c.m = 0
+						}
+						else {
+							println("ldh: mr,r mode: invalid cycle ${c.m}")
+						}
+					}
+				}
+				.r_a8 {
+					if pr { println("ldh r,a8 called (m=${c.m})") }
+					match c.m {
+						1 {
+							c.z = c.read_memory(c.pc)
+							c.pc++
+						}
+						2 {
+							c.z = c.read_memory(combine_u8(0xff, c.z))
+						}
+						3 {
+							c.ir = c.fetch_cycle(c.pc)
+							c.pc++
+							c.a = c.z
+							c.m = 0
+						}
+						else {
+							println("ldh: r,a8 mode: invalid cycle ${c.m}")
+						}
+					}
+				}
+				else {}
+			}
 		}
 		.jphl {
 			if pr { println("jphl called (not implemented)") }

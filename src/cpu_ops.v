@@ -355,7 +355,7 @@ const instructions = [
 	Instruction{in_type: InstructionType.ldh, mode: AddressMode.mr_r, reg_1: RegisterType.c, reg_2: RegisterType.a}, // 0xE2 LDH [C],A
 	Instruction{in_type: InstructionType.none}, // 0xE3 INVALID
 	Instruction{in_type: InstructionType.none}, // 0xE4 INVALID
-	Instruction{in_type: InstructionType.push, mode: AddressMode.r, reg_1: RegisterType.hl}, // 0xE5 PUSH NL
+	Instruction{in_type: InstructionType.push, mode: AddressMode.r, reg_1: RegisterType.hl}, // 0xE5 PUSH HL
 	Instruction{in_type: InstructionType.and, mode: AddressMode.r_d8, reg_1: RegisterType.a}, // 0xE6 AND A,D8
 	Instruction{in_type: InstructionType.rst, mode: AddressMode.imp, reg_1: RegisterType.none, reg_2: RegisterType.none, cond: ConditionType.none, param: 0x20}, // 0xE7 RST $20
 	Instruction{in_type: InstructionType.add, mode: AddressMode.r_d8, reg_1: RegisterType.sp}, // 0xE8 ADD SP,D8

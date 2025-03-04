@@ -174,7 +174,7 @@ fn (c Cpu) cond_true(ct ConditionType) bool {
 	}
 }
 
-fn (mut c Cpu) tick(pr bool) {
+pub fn (mut c Cpu) tick(pr bool) {
 	mut next_inst := instructions[c.ir]
 	match next_inst.in_type {
 		.none {

@@ -27,7 +27,7 @@ fn (r &Ram) foo() {
 }
 
 @[inline]
-fn (r &Ram) read(addr u16) u8 {
+pub fn (r &Ram) read(addr u16) u8 {
 	return r.memory[addr]
 }
 

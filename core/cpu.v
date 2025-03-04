@@ -363,19 +363,33 @@ pub fn (mut c Cpu) tick(pr bool) {
 							c.set_z(result == 0)
 							c.set_n(false)
 							c.set_h((result & 0x0f) == 0)
+							c.ir = c.fetch_cycle(c.pc)
+							c.pc++
+							c.m = 0
 						}
 						.af, .bc, .de, .hl, .sp, .pc {
-							if pr { println("inc r (16-bit) called") }
-							result := c.read_reg16(next_inst.reg_1) + 1
-							c.set_reg16(next_inst.reg_1, result)
+							if pr { println("inc r (16-bit) called (m=${c.m})") }
+							match c.m {
+								1 {
+									result := c.read_reg16(next_inst.reg_1) + 1
+									c.set_reg16(next_inst.reg_1, result)
+								}
+								2 {
+									c.ir = c.fetch_cycle(c.pc)
+									c.pc++
+									c.m = 0
+								}
+								else {
+									println("inc: r mode (16-bit): invalid cycle ${c.m}")
+								}
+							}
+
 						}
 						else {
 							println("inc: r mode: invalid register ${next_inst.reg_1}")
 						}
 					}
-					c.ir = c.fetch_cycle(c.pc)
-					c.pc++
-					c.m = 0
+
 				}
 				.mr {
 					println("inc: mr mode: not implemented")
@@ -956,6 +970,7 @@ pub fn (mut c Cpu) tick(pr bool) {
 	}
 	if pr { println(c) }
 	c.m++
+	c.cycles++
 }
 
 fn (mut c Cpu) fetch_cycle(addr u16) u8 {

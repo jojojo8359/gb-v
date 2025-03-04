@@ -1,7 +1,7 @@
 module core
 
 // 0x00 NOP
-fn test_nop_00() {
+fn test_00_nop() {
 	// 1 machine cycle, 1 byte
 	mut ram := &core.Ram{}
 	mut cpu := &core.Cpu{ram: ram}
@@ -16,7 +16,7 @@ fn test_nop_00() {
 }
 
 // 0x01 LD BC,D16
-fn test_ld_bc_d16_01() {
+fn test_01_ld_bc_d16() {
 	// 3 machine cycles, 3 bytes
 	mut ram := &core.Ram{}
 	mut cpu := &core.Cpu{ram: ram}
@@ -36,7 +36,7 @@ fn test_ld_bc_d16_01() {
 }
 
 // 0x02 LD [BC],A
-fn test_ld_m_bc_a_02() {
+fn test_02_ld_m_bc_a() {
 	// 2 machine cycles, 1 byte
 	mut ram := &core.Ram{}
 	mut cpu := &core.Cpu{ram: ram}
@@ -57,7 +57,7 @@ fn test_ld_m_bc_a_02() {
 }
 
 // 0x03 INC BC
-fn test_inc_bc_03() {
+fn test_03_inc_bc() {
 	// 2 machine cycles, 1 byte
 	mut ram := &core.Ram{}
 	mut cpu := &core.Cpu{ram: ram}
@@ -75,7 +75,7 @@ fn test_inc_bc_03() {
 	assert cpu.cycles == 2
 }
 
-fn test_inc_bc_03_between_bytes() {
+fn test_03_inc_bc_between_bytes() {
 	// 2 machine cycles, 1 byte
 	mut ram := &core.Ram{}
 	mut cpu := &core.Cpu{ram: ram}
@@ -94,7 +94,7 @@ fn test_inc_bc_03_between_bytes() {
 	assert cpu.cycles == 2
 }
 
-fn test_inc_bc_03_wrap() {
+fn test_03_inc_bc_wrap() {
 	// 2 machine cycles, 1 byte
 	mut ram := &core.Ram{}
 	mut cpu := &core.Cpu{ram: ram}
@@ -115,7 +115,7 @@ fn test_inc_bc_03_wrap() {
 }
 
 // 0x04 INC B
-fn test_inc_b_04() {
+fn test_04_inc_b() {
 	// 1 machine cycle, 1 byte
 	// Z/H set by operation, N = 0
 	mut ram := &core.Ram{}
@@ -133,7 +133,7 @@ fn test_inc_b_04() {
 	assert cpu.get_n() == false
 }
 
-fn test_inc_b_04_wrap_to_zero() {
+fn test_04_inc_b_wrap_to_zero() {
 	// 1 machine cycle, 1 byte
 	// Z/H set by operation, N = 0
 	mut ram := &core.Ram{}
@@ -153,7 +153,7 @@ fn test_inc_b_04_wrap_to_zero() {
 }
 
 // 0x05 DEC B
-fn test_dec_b_05() {
+fn test_05_dec_b() {
 	// 1 machine cycle, 1 byte
 	// Z/H set by operation, N = 1
 	mut ram := &core.Ram{}
@@ -172,7 +172,7 @@ fn test_dec_b_05() {
 	assert cpu.get_n() == true
 }
 
-fn test_dec_b_05_wrap() {
+fn test_05_dec_b_wrap() {
 	// 1 machine cycle, 1 byte
 	// Z/H set by operation, N = 1
 	mut ram := &core.Ram{}

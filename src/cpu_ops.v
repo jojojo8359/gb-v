@@ -1,4 +1,4 @@
-module main
+module src
 
 enum AddressMode as u8 {
 	imp

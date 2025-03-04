@@ -1,4 +1,4 @@
-module main
+module src
 
 import os
 
@@ -17,14 +17,21 @@ fn (mut r Ram) load_boot_rom() {
 	}
 }
 
+pub fn (r &Ram) dump_memory() {
+	// Use fixed-size array as a normal array by slicing
+	os.write_file_array("dump.bin", r.memory[..]) or { panic(err) }
+}
+
 fn (r &Ram) foo() {
 	println("Foo called in ram")
 }
 
+@[inline]
 fn (r &Ram) read(addr u16) u8 {
 	return r.memory[addr]
 }
 
+@[inline]
 fn (mut r Ram) write(addr u16, data u8) {
 	r.memory[addr] = data
 }

@@ -1,4 +1,4 @@
-module main
+module src
 
 import time
 import readline { read_line }
@@ -47,6 +47,10 @@ fn main() {
 			if input.trim_space().to_lower() in ["q", "quit"] {
 				println("Quitting...")
 				break
+			} else if input.trim_space().to_lower() == "dump" {
+				mb.ram.dump_memory()
+				println("Memory dumped to dump.bin.")
+				continue
 			} else if input.trim_space_left().to_lower().starts_with("b") {
 				addr := input.trim_space_left().trim_space_right().split_by_space()[1].u16()
 				breakpoints << addr

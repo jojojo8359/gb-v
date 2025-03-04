@@ -1,11 +1,11 @@
 import time
 import readline { read_line }
 
-import src
+import core
 
 fn main() {
 	mut sw := time.new_stopwatch()
-	mut mb := src.Mb.new()
+	mut mb := core.Mb.new()
 	println("Init took ${sw.elapsed().nanoseconds()}ns")
 	sw = time.new_stopwatch()
 	for _ in 0..8 {

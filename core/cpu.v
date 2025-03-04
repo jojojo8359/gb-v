@@ -1,4 +1,4 @@
-module src
+module core
 
 import math
 

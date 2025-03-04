@@ -1,4 +1,4 @@
-module src
+module core
 
 const lcd_x_res := 160
 const lcd_y_res := 144

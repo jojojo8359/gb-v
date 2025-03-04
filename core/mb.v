@@ -1,4 +1,4 @@
-module src
+module core
 
 pub struct Mb {
 pub mut:

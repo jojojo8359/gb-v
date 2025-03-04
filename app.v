@@ -3,7 +3,7 @@ module no_main
 import sdl
 import sdl.callbacks
 
-import src
+import core
 
 fn init() {
 	callbacks.on_init(app_init)
@@ -17,7 +17,7 @@ mut:
 	window &sdl.Window = unsafe { nil }
 	renderer &sdl.Renderer = unsafe { nil }
 	texture &sdl.Texture = unsafe { nil }
-	mb &src.Mb = unsafe { nil }
+	mb &core.Mb = unsafe { nil }
 	ticks u64
 	scale int = 4
 }
@@ -27,7 +27,7 @@ const lcd_y_res = 144
 
 fn app_init(appstate &voidptr, argc int, argv &&char) sdl.AppResult {
 	mut app := &SDLApp{}
-	app.mb = src.Mb.new()
+	app.mb = core.Mb.new()
 	for i in 0..lcd_y_res {
 		app.mb.ppu.lcd[i * lcd_x_res] = 0xff0000ff
 		app.mb.ppu.lcd[(i * lcd_x_res) + (lcd_x_res - 1)] =  0xff0000ff

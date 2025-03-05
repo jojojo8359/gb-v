@@ -5,7 +5,7 @@ fn test_00_nop() {
 	// 1 machine cycle, 1 byte
 	mut ram := &core.Ram{}
 	mut cpu := &core.Cpu{ram: ram}
-	cpu.ir = u8(0x00) // opcode: 0x00
+	cpu.ir = 0x00 // opcode: 0x00
 	// Given a NOP...
 	assert cpu.pc == 0
 	cpu.tick(false)
@@ -20,10 +20,10 @@ fn test_01_ld_bc_d16() {
 	// 3 machine cycles, 3 bytes
 	mut ram := &core.Ram{}
 	mut cpu := &core.Cpu{ram: ram}
-	cpu.ir = u8(0x01) // opcode: 0x01
+	cpu.ir = 0x01 // opcode: 0x01
 	// Given a direct value of 0x1234 (4660)...
-	ram.memory[0] = u8(0x34) // lsb of d16: 0x34 (52)
-	ram.memory[1] = u8(0x12) // msb of d16: 0x12 (18)
+	ram.memory[0] = 0x34 // lsb of d16: 0x34 (52)
+	ram.memory[1] = 0x12 // msb of d16: 0x12 (18)
 	assert cpu.pc == 0
 	cpu.tick(false)
 	cpu.tick(false)
@@ -40,13 +40,13 @@ fn test_02_ld_m_bc_a() {
 	// 2 machine cycles, 1 byte
 	mut ram := &core.Ram{}
 	mut cpu := &core.Cpu{ram: ram}
-	cpu.ir = u8(0x02) // opcode: 0x02
+	cpu.ir = 0x02 // opcode: 0x02
 	// This instruction will load the data from register A and load it into memory at address in
 	// registers BC.
 	// Given BC = 0xBEEF and A = 0x42...
-	cpu.b = u8(0xBE)
-	cpu.c = u8(0xEF)
-	cpu.a = u8(0x42)
+	cpu.b = 0xBE
+	cpu.c = 0xEF
+	cpu.a = 0x42
 	assert cpu.pc == 0
 	cpu.tick(false)
 	cpu.tick(false)
@@ -61,7 +61,7 @@ fn test_03_inc_bc() {
 	// 2 machine cycles, 1 byte
 	mut ram := &core.Ram{}
 	mut cpu := &core.Cpu{ram: ram}
-	cpu.ir = u8(0x03) // opcode: 0x03
+	cpu.ir = 0x03 // opcode: 0x03
 	// Given BC = 0...
 	assert cpu.b == 0
 	assert cpu.c == 0
@@ -79,7 +79,7 @@ fn test_03_inc_bc_between_bytes() {
 	// 2 machine cycles, 1 byte
 	mut ram := &core.Ram{}
 	mut cpu := &core.Cpu{ram: ram}
-	cpu.ir = u8(0x03) // opcode: 0x03
+	cpu.ir = 0x03 // opcode: 0x03
 	cpu.c = 0xFF
 	// Given BC = 0x00FF...
 	assert cpu.b == 0x00
@@ -98,7 +98,7 @@ fn test_03_inc_bc_wrap() {
 	// 2 machine cycles, 1 byte
 	mut ram := &core.Ram{}
 	mut cpu := &core.Cpu{ram: ram}
-	cpu.ir = u8(0x03) // opcode: 0x03
+	cpu.ir = 0x03 // opcode: 0x03
 	cpu.b = 0xFF
 	cpu.c = 0xFF
 	// Given BC = 0xFFFF...
@@ -120,7 +120,7 @@ fn test_04_inc_b() {
 	// Z/H set by operation, N = 0
 	mut ram := &core.Ram{}
 	mut cpu := &core.Cpu{ram: ram}
-	cpu.ir = u8(0x04) // opcode: 0x04
+	cpu.ir = 0x04 // opcode: 0x04
 	// Given B = 0x00...
 	assert cpu.b == 0x00
 	assert cpu.pc == 0
@@ -138,7 +138,7 @@ fn test_04_inc_b_wrap_to_zero() {
 	// Z/H set by operation, N = 0
 	mut ram := &core.Ram{}
 	mut cpu := &core.Cpu{ram: ram}
-	cpu.ir = u8(0x04) // opcode: 0x04
+	cpu.ir = 0x04 // opcode: 0x04
 	cpu.b = 0xFF
 	// Given B = 0xFF...
 	assert cpu.b == 0xFF
@@ -158,8 +158,8 @@ fn test_05_dec_b() {
 	// Z/H set by operation, N = 1
 	mut ram := &core.Ram{}
 	mut cpu := &core.Cpu{ram: ram}
-	cpu.ir = u8(0x05) // opcode: 0x05
-	cpu.b = u8(0x01)
+	cpu.ir = 0x05 // opcode: 0x05
+	cpu.b = 0x01
 	// Given B = 0x01...
 	assert cpu.b == 0x01
 	assert cpu.pc == 0
@@ -177,7 +177,7 @@ fn test_05_dec_b_wrap() {
 	// Z/H set by operation, N = 1
 	mut ram := &core.Ram{}
 	mut cpu := &core.Cpu{ram: ram}
-	cpu.ir = u8(0x05) // opcode: 0x05
+	cpu.ir = 0x05 // opcode: 0x05
 	// Given B = 0x00...
 	assert cpu.b == 0x00
 	assert cpu.pc == 0

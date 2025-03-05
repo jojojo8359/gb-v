@@ -265,6 +265,7 @@ pub fn (mut c Cpu) tick(pr bool) {
 					}
 				}
 				.a16_r {
+					// TODO: Match based on r size
 					if pr { println("ld: a16,r called (m=${c.m})") }
 					match c.m {
 						1 {
@@ -411,6 +412,7 @@ pub fn (mut c Cpu) tick(pr bool) {
 							c.set_n(true)
 							c.set_h((result & 0x0f) == 0x0f)
 						}
+						// TODO: Make 16-bit register dec perform 2 machine cycles
 						.af, .bc, .de, .hl, .sp, .pc {
 							if pr { println("dec r (16-bit) called") }
 							result := c.read_reg16(next_inst.reg_1) - 1

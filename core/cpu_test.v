@@ -131,6 +131,7 @@ fn test_04_inc_b() {
 	assert cpu.get_z() == false
 	assert cpu.get_h() == false
 	assert cpu.get_n() == false
+	assert cpu.cycles == 1
 }
 
 fn test_04_inc_b_wrap_to_zero() {
@@ -150,6 +151,7 @@ fn test_04_inc_b_wrap_to_zero() {
 	assert cpu.get_z() == true
 	assert cpu.get_h() == true
 	assert cpu.get_n() == false
+	assert cpu.cycles == 1
 }
 
 // 0x05 DEC B
@@ -170,6 +172,7 @@ fn test_05_dec_b() {
 	assert cpu.get_z() == true
 	assert cpu.get_h() == false
 	assert cpu.get_n() == true
+	assert cpu.cycles == 1
 }
 
 fn test_05_dec_b_wrap() {
@@ -188,4 +191,5 @@ fn test_05_dec_b_wrap() {
 	assert cpu.get_z() == false
 	assert cpu.get_h() == true
 	assert cpu.get_n() == true
+	assert cpu.cycles == 1
 }

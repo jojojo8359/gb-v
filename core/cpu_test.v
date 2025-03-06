@@ -52,8 +52,7 @@ fn test_02_ld_m_bc_a() {
 	cpu.tick(false)
 	assert cpu.pc == 1
 	// ... mem[0xBEEF] should equal 0x42.
-	// TODO: Change to raw RAM read
-	assert ram.read(0xBEEF) == 0x42
+	assert ram.memory[0xBEEF] == 0x42
 	assert cpu.cycles == 2
 }
 

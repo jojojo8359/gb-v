@@ -265,27 +265,59 @@ pub fn (mut c Cpu) tick(pr bool) {
 					}
 				}
 				.a16_r {
-					// TODO: Match based on r size
 					if pr { println("ld: a16,r called (m=${c.m})") }
-					match c.m {
-						1 {
-							c.z = c.read_memory(c.pc)
-							c.pc++
+					match next_inst.reg_2 {
+						.a, .b, .c, .d, .e, .h, .l {
+							match c.m {
+								1 {
+									c.z = c.read_memory(c.pc)
+									c.pc++
+								}
+								2 {
+									c.w = c.read_memory(c.pc)
+									c.pc++
+								}
+								3 {
+									c.write_memory(combine_u8(c.w, c.z), c.read_reg8(next_inst.reg_2))
+								}
+								4 {
+									c.ir = c.fetch_cycle(c.pc)
+									c.pc++
+									c.m = 0
+								}
+								else {
+									println("ld: a16,r mode: invalid cycle ${c.m}")
+								}
+							}
 						}
-						2 {
-							c.w = c.read_memory(c.pc)
-							c.pc++
-						}
-						3 {
-							c.write_memory(combine_u8(c.w, c.z), c.a)
-						}
-						4 {
-							c.ir = c.fetch_cycle(c.pc)
-							c.pc++
-							c.m = 0
+						.sp {
+							match c.m {
+								1 {
+									c.z = c.read_memory(c.pc)
+									c.pc++
+								}
+								2 {
+									c.w = c.read_memory(c.pc)
+									c.pc++
+								}
+								3 {
+									c.write_memory(combine_u8(c.w, c.z), lsb(c.sp))
+								}
+								4 {
+									c.write_memory(combine_u8(c.w, c.z) + 1, msb(c.sp))
+								}
+								5 {
+									c.ir = c.fetch_cycle(c.pc)
+									c.pc++
+									c.m = 0
+								}
+								else {
+									println("ld: a16,r mode: invalid cycle ${c.m}")
+								}
+							}
 						}
 						else {
-							println("ld: a16,r mode: invalid cycle ${c.m}")
+							println("ld: a16,r mode: invalid register ${next_inst.reg_2}")
 						}
 					}
 				}

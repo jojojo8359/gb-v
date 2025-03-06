@@ -261,8 +261,8 @@ fn test_08_ld_m_d16_sp() {
 	mut ram := &core.Ram{}
 	mut cpu := &core.Cpu{ram: ram}
 	cpu.ir = 0x08 // opcode: 0x08
-	ram.memory[0] = 0xBE
-	ram.memory[1] = 0xEF
+	ram.memory[0] = 0xEF // lsb of d16
+	ram.memory[1] = 0xBE // msb of d16
 	cpu.sp = 0xDEAD
 	// Given D16 = 0xBEEF and SP = 0xDEAD...
 	assert cpu.pc == 0
@@ -274,8 +274,8 @@ fn test_08_ld_m_d16_sp() {
 	cpu.tick(false)
 	assert cpu.pc == 3
 	// ... RAM[0xBEEF-0xBEF0] should equal 0xDEAD.
-	assert ram.memory[0xBEEF] == 0xDE
-	assert ram.memory[0xBEF0] == 0xAD
+	assert ram.memory[0xBEEF] == 0xAD
+	assert ram.memory[0xBEF0] == 0xDE
 	assert cpu.cycles == 5
 }
 

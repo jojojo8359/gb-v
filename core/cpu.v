@@ -596,7 +596,16 @@ pub fn (mut c Cpu) tick(pr bool) {
 			}
 		}
 		.rra {
-			if pr { println("rra called (not implemented)") }
+			if pr { println("rra called") }
+			v := c.a & 0x1
+			c.a = (c.a >> 1) | (u8(c.get_c()) << 7)
+			c.set_z(false)
+			c.set_n(false)
+			c.set_h(false)
+			c.set_c(v != 0)
+			c.ir = c.fetch_cycle(c.pc)
+			c.pc++
+			c.m = 0
 		}
 		.daa {
 			if pr { println("daa called (not implemented)") }

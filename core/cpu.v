@@ -443,20 +443,31 @@ pub fn (mut c Cpu) tick(pr bool) {
 							c.set_z(result == 0)
 							c.set_n(true)
 							c.set_h((result & 0x0f) == 0x0f)
+							c.ir = c.fetch_cycle(c.pc)
+							c.pc++
+							c.m = 0
 						}
-						// TODO: Make 16-bit register dec perform 2 machine cycles
 						.af, .bc, .de, .hl, .sp, .pc {
-							if pr { println("dec r (16-bit) called") }
-							result := c.read_reg16(next_inst.reg_1) - 1
-							c.set_reg16(next_inst.reg_1, result)
+							if pr { println("dec r (16-bit) called (m=${c.m})") }
+							match c.m {
+								1 {
+									result := c.read_reg16(next_inst.reg_1) - 1
+									c.set_reg16(next_inst.reg_1, result)
+								}
+								2 {
+									c.ir = c.fetch_cycle(c.pc)
+									c.pc++
+									c.m = 0
+								}
+								else {
+									println("dec: r mode: invalid cycle ${c.m}")
+								}
+							}
 						}
 						else {
 							println("dec: r mode: invalid register ${next_inst.reg_1}")
 						}
 					}
-					c.ir = c.fetch_cycle(c.pc)
-					c.pc++
-					c.m = 0
 				}
 				.mr {
 					println("dec: mr mode: not implemented")

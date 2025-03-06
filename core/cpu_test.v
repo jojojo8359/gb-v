@@ -316,9 +316,9 @@ fn test_09_add_hl_bc_between_bytes() {
 	// Given HL = 0x00F0 and BC = 0x0021...
 	assert cpu.pc == 0
 	assert cpu.h == 0x00
-	assert cpu.l == 0x00
+	assert cpu.l == 0xF0
 	assert cpu.b == 0x00
-	assert cpu.c == 0xF0
+	assert cpu.c == 0x21
 	cpu.tick(false)
 	cpu.tick(false)
 	assert cpu.pc == 1
@@ -326,7 +326,7 @@ fn test_09_add_hl_bc_between_bytes() {
 	assert cpu.h == 0x01
 	assert cpu.l == 0x11
 	// TODO: Check flag math
-	assert cpu.get_c() == true
+	assert cpu.get_c() == false
 	assert cpu.get_h() == true
 	assert cpu.get_n() == false
 	assert cpu.cycles == 2

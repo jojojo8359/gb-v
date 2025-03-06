@@ -479,7 +479,51 @@ pub fn (mut c Cpu) tick(pr bool) {
 			c.m = 0
 		}
 		.add {
-			if pr { println("add called (not implemented)") }
+			match next_inst.mode {
+				.r_r {
+					match next_inst.reg_2 {
+						.bc, .de, .hl, .sp { // destination is always hl
+							// while addition actually happens over two steps (one for each byte),
+							// it's easier to do it all at once in one instruction and just fetch
+							// the next instruction in the other
+							if pr { println("add r,r (16-bit) called (m=${c.m})") }
+							match c.m {
+								1 {
+									v1 := c.read_reg16(RegisterType.hl)
+									v2 := c.read_reg16(next_inst.reg_2)
+									c.h, c.l = split_u16(v1 + v2)
+									c.set_h((v1 & 0x0FFF) + (v2 & 0x0FFF) >= 0x10)
+									c.set_c(u32(v1) + u32(v2) >= 0x10000)
+									c.set_n(false)
+								}
+								2 {
+									c.ir = c.fetch_cycle(c.pc)
+									c.pc++
+									c.m = 0
+								}
+								else {
+									println("add: r,r mode: invalid cycle ${c.m}")
+								}
+							}
+						}
+						.a, .b, .c, .d, .e, .h, .l { // destination is always a
+							if pr { println("add r,r (8-bit) called (not implemented)") }
+						}
+						else {
+							println("add: r,r mode: invalid register ${next_inst.reg_2}")
+						}
+					}
+				}
+				.r_mr {
+					if pr { println("add r,mr called (not implemented)") }
+				}
+				.r_d8 {
+					if pr { println("add r,d8 called (not implemented)") }
+				}
+				else {
+					println("add: invalid mode ${next_inst.mode}")
+				}
+			}
 		}
 		.rrca {
 			if pr { println("rrca called (not implemented)") }

@@ -554,7 +554,7 @@ pub fn (mut c Cpu) tick(pr bool) {
 		.rla {
 			if pr { println("rla called") }
 			v := (c.a >> 7) & 1
-			c.a = (v << 1) | u8(c.get_c())
+			c.a = (c.a << 1) | u8(c.get_c())
 			c.set_z(false)
 			c.set_n(false)
 			c.set_h(false)

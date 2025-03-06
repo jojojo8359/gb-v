@@ -435,7 +435,16 @@ pub fn (mut c Cpu) tick(pr bool) {
 			}
 		}
 		.rlca {
-			if pr { println("rlca called (not implemented)") }
+			if pr { println("rlca called") }
+			carry := u8(bit(c.a, 7))
+			c.a = (c.a << 1) | carry
+			c.set_c(carry == 1)
+			c.set_h(false)
+			c.set_n(false)
+			c.set_z(false)
+			c.ir = c.fetch_cycle(c.pc)
+			c.pc++
+			c.m = 0
 		}
 		.add {
 			if pr { println("add called (not implemented)") }

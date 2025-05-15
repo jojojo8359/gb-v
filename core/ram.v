@@ -6,7 +6,7 @@ struct Ram {
 pub mut:
 	// cart_fixed []u8 = [u8(0x31), u8(0xFE), u8(0xFF), u8(0x0)]
 	// cart_fixed []u8 = [u8(0x1), u8(0x34), u8(0x12), u8(0x0)]
-	memory [0xFFFF]u8
+	memory [0x10000]u8
 	// memory [0x100]u8
 }
 

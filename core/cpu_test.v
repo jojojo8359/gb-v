@@ -1210,3 +1210,568 @@ fn test_1f_rra_drop_c_1() {
 	assert cpu.get_c() == true
 	assert cpu.cycles == 1
 }
+
+// 0x20 JR NZ,D8
+fn test_20_jr_nz_d8_z_0() {
+	// 3 machine cycles if true, 2 if false, 2 bytes
+	mut ram := &core.Ram{}
+	mut cpu := &core.Cpu{ram: ram}
+	cpu.ir = 0x20 // opcode: 0x20
+	ram.memory[0] = 0x41 // jump 41 instructions ahead
+	ram.memory[1] = 0xAA
+	ram.memory[0x42] = 0xFF
+	// Given D8 = 0x41, RAM[0x42] = 0xFF, RAM[1] = 0xAA and Z flag = 0...
+	assert cpu.get_z() == false
+	assert cpu.pc == 0
+	cpu.tick(false)
+	cpu.tick(false)
+	cpu.tick(false)
+	// ... IR should equal 0xFF and PC should equal 0x43 (prefetch included).
+	assert cpu.ir == 0xFF
+	assert cpu.ir != 0xAA
+	assert cpu.pc == 0x43
+	assert cpu.cycles == 3
+}
+
+fn test_20_jr_nz_d8_z_1() {
+	// 3 machine cycles if true, 2 if false, 2 bytes
+	mut ram := &core.Ram{}
+	mut cpu := &core.Cpu{ram: ram}
+	cpu.ir = 0x20 // opcode: 0x20
+	ram.memory[0] = 0x41 // jump 41 instructions ahead
+	ram.memory[1] = 0xAA
+	ram.memory[0x42] = 0xFF
+	cpu.set_z(true)
+	// Given D8 = 0x41, RAM[0x42] = 0xFF, RAM[1] = 0xAA and Z flag = 1...
+	assert cpu.get_z() == true
+	assert cpu.pc == 0
+	cpu.tick(false)
+	cpu.tick(false)
+	// ... IR should equal 0xAA and PC should equal 2.
+	assert cpu.pc == 2
+	assert cpu.ir != 0xFF
+	assert cpu.ir == 0xAA
+	assert cpu.cycles == 2
+}
+
+// 0x21 LD HL,D16
+fn test_21_ld_hl_d16() {
+	// 3 machine cycles, 3 bytes
+	mut ram := &core.Ram{}
+	mut cpu := &core.Cpu{ram: ram}
+	cpu.ir = 0x21 // opcode: 0x21
+	// Given D16 = 0x1234 (4660)...
+	ram.memory[0] = 0x34 // lsb of d16: 0x34 (52)
+	ram.memory[1] = 0x12 // msb of d16: 0x12 (18)
+	assert cpu.pc == 0
+	cpu.tick(false)
+	cpu.tick(false)
+	cpu.tick(false)
+	assert cpu.pc == 3
+	// ... HL should equal 0x1234.
+	assert cpu.h == 0x12
+	assert cpu.l == 0x34
+	assert cpu.cycles == 3
+}
+
+// 0x22 LD [HL+],A
+fn test_22_ld_hli_a() {
+	// 2 machine cycles, 1 byte
+	mut ram := &core.Ram{}
+	mut cpu := &core.Cpu{ram: ram}
+	cpu.ir = 0x22 // opcode: 0x22
+	cpu.a = 0x42
+	cpu.h = 0xBE
+	cpu.l = 0xEF
+	// Given A = 0x42 and HL = 0xBEEF...
+	assert cpu.a == 0x42
+	assert cpu.h == 0xBE
+	assert cpu.l == 0xEF
+	assert cpu.pc == 0
+	cpu.tick(false)
+	cpu.tick(false)
+	assert cpu.pc == 1
+	// ... RAM[0xBEEF] should equal 0x42 and HL should equal 0xBEF0.
+	assert ram.memory[0xBEEF] == 0x42
+	assert cpu.h == 0xBE
+	assert cpu.l == 0xF0
+	assert cpu.cycles == 2
+}
+
+fn test_22_ld_hli_a_wrap() {
+	// 2 machine cycles, 1 byte
+	mut ram := &core.Ram{}
+	mut cpu := &core.Cpu{ram: ram}
+	cpu.ir = 0x22 // opcode: 0x22
+	cpu.a = 0x42
+	cpu.h = 0xFF
+	cpu.l = 0xFF
+	// Given A = 0x42 and HL = 0xFFFF...
+	assert cpu.a == 0x42
+	assert cpu.h == 0xFF
+	assert cpu.l == 0xFF
+	assert cpu.pc == 0
+	cpu.tick(false)
+	cpu.tick(false)
+	assert cpu.pc == 1
+	// ... RAM[0xFFFF] should equal 0x42 and HL should equal 0x0000.
+	assert ram.memory[0xFFFF] == 0x42
+	assert cpu.h == 0x00
+	assert cpu.l == 0x00
+	assert cpu.cycles == 2
+}
+
+// 0x23 INC HL
+fn test_23_inc_hl() {
+	// 2 machine cycles, 1 byte
+	mut ram := &core.Ram{}
+	mut cpu := &core.Cpu{ram: ram}
+	cpu.ir = 0x23 // opcode: 0x23
+	// Given HL = 0...
+	assert cpu.h == 0
+	assert cpu.l == 0
+	assert cpu.pc == 0
+	cpu.tick(false)
+	cpu.tick(false)
+	assert cpu.pc == 1
+	// ... HL should equal 1.
+	assert cpu.h == 0
+	assert cpu.l == 1
+	assert cpu.cycles == 2
+}
+
+fn test_23_inc_hl_between_bytes() {
+	// 2 machine cycles, 1 byte
+	mut ram := &core.Ram{}
+	mut cpu := &core.Cpu{ram: ram}
+	cpu.ir = 0x23 // opcode: 0x23
+	cpu.l = 0xFF
+	// Given HL = 0x00FF...
+	assert cpu.h == 0x00
+	assert cpu.l == 0xFF
+	assert cpu.pc == 0
+	cpu.tick(false)
+	cpu.tick(false)
+	assert cpu.pc == 1
+	// ... HL should equal 0x0100.
+	assert cpu.h == 0x01
+	assert cpu.l == 0x00
+	assert cpu.cycles == 2
+}
+
+fn test_23_inc_hl_wrap() {
+	// 2 machine cycles, 1 byte
+	mut ram := &core.Ram{}
+	mut cpu := &core.Cpu{ram: ram}
+	cpu.ir = 0x23 // opcode: 0x23
+	cpu.h = 0xFF
+	cpu.l = 0xFF
+	// Given HL = 0xFFFF...
+	assert cpu.h == 0xFF
+	assert cpu.l == 0xFF
+	assert cpu.pc == 0
+	cpu.tick(false)
+	cpu.tick(false)
+	assert cpu.pc == 1
+	// ... HL should equal 0x0000.
+	assert cpu.h == 0x00
+	assert cpu.l == 0x00
+	assert cpu.cycles == 2
+}
+
+// 0x24 INC H
+fn test_24_inc_h() {
+	// 1 machine cycle, 1 byte
+	// Z/H set by operation, N = 0
+	mut ram := &core.Ram{}
+	mut cpu := &core.Cpu{ram: ram}
+	cpu.ir = 0x24 // opcode: 0x24
+	// Given H = 0x00...
+	assert cpu.h == 0x00
+	assert cpu.pc == 0
+	cpu.tick(false)
+	assert cpu.pc == 1
+	// ... H should equal 0x01.
+	assert cpu.h == 0x01
+	assert cpu.get_z() == false
+	assert cpu.get_h() == false
+	assert cpu.get_n() == false
+	assert cpu.cycles == 1
+}
+
+fn test_24_inc_h_wrap_to_zero() {
+	// 1 machine cycle, 1 byte
+	// Z/H set by operation, N = 0
+	mut ram := &core.Ram{}
+	mut cpu := &core.Cpu{ram: ram}
+	cpu.ir = 0x24 // opcode: 0x24
+	cpu.h = 0xFF
+	// Given H = 0xFF...
+	assert cpu.h == 0xFF
+	assert cpu.pc == 0
+	cpu.tick(false)
+	assert cpu.pc == 1
+	// ... H should equal 0x00.
+	assert cpu.h == 0x00
+	assert cpu.get_z() == true
+	assert cpu.get_h() == true
+	assert cpu.get_n() == false
+	assert cpu.cycles == 1
+}
+
+// 0x25 DEC H
+fn test_25_dec_h() {
+	// 1 machine cycle, 1 byte
+	// Z/H set by operation, N = 1
+	mut ram := &core.Ram{}
+	mut cpu := &core.Cpu{ram: ram}
+	cpu.ir = 0x25 // opcode: 0x25
+	cpu.h = 0x01
+	// Given H = 0x01...
+	assert cpu.h == 0x01
+	assert cpu.pc == 0
+	cpu.tick(false)
+	assert cpu.pc == 1
+	// ... H should equal 0x00.
+	assert cpu.h == 0x00
+	assert cpu.get_z() == true
+	assert cpu.get_h() == false
+	assert cpu.get_n() == true
+	assert cpu.cycles == 1
+}
+
+fn test_25_dec_h_wrap() {
+	// 1 machine cycle, 1 byte
+	// Z/H set by operation, N = 1
+	mut ram := &core.Ram{}
+	mut cpu := &core.Cpu{ram: ram}
+	cpu.ir = 0x25 // opcode: 0x25
+	// Given H = 0x00...
+	assert cpu.h == 0x00
+	assert cpu.pc == 0
+	cpu.tick(false)
+	assert cpu.pc == 1
+	// ... H should equal 0xFF.
+	assert cpu.h == 0xFF
+	assert cpu.get_z() == false
+	assert cpu.get_h() == true
+	assert cpu.get_n() == true
+	assert cpu.cycles == 1
+}
+
+// 0x26 LD H,D8
+fn test_1e_ld_h_d8() {
+	// 2 machine cycles, 2 bytes
+	mut ram := &core.Ram{}
+	mut cpu := &core.Cpu{ram: ram}
+	cpu.ir = 0x26 // opcode: 0x26
+	ram.memory[0] = 0x42 // d8 = 0x42 (66)
+	// Given D8 = 0x42...
+	assert cpu.pc == 0
+	cpu.tick(false)
+	cpu.tick(false)
+	assert cpu.pc == 2
+	// ... H should equal 0x42.
+	assert cpu.h == 0x42
+	assert cpu.cycles == 2
+}
+
+// 0x27 DAA
+// TODO: Make test for DAA - too complex for now
+
+// 0x28 JR Z,D8
+fn test_28_jr_z_d8_z_0() {
+	// 3 machine cycles if true, 2 if false, 2 bytes
+	mut ram := &core.Ram{}
+	mut cpu := &core.Cpu{ram: ram}
+	cpu.ir = 0x28 // opcode: 0x28
+	ram.memory[0] = 0x41 // jump 41 instructions ahead
+	ram.memory[1] = 0xAA
+	ram.memory[0x42] = 0xFF
+	// Given D8 = 0x41, RAM[0x42] = 0xFF, RAM[1] = 0xAA and Z flag = 0...
+	assert cpu.get_z() == false
+	assert cpu.pc == 0
+	cpu.tick(false)
+	cpu.tick(false)
+	// ... IR should equal 0xAA and PC should equal 2.
+	assert cpu.pc == 2
+	assert cpu.ir != 0xFF
+	assert cpu.ir == 0xAA
+	assert cpu.cycles == 2
+}
+
+fn test_28_jr_z_d8_z_1() {
+	// 3 machine cycles if true, 2 if false, 2 bytes
+	mut ram := &core.Ram{}
+	mut cpu := &core.Cpu{ram: ram}
+	cpu.ir = 0x28 // opcode: 0x28
+	ram.memory[0] = 0x41 // jump 41 instructions ahead
+	ram.memory[1] = 0xAA
+	ram.memory[0x42] = 0xFF
+	cpu.set_z(true)
+	// Given D8 = 0x41, RAM[0x42] = 0xFF, RAM[1] = 0xAA and Z flag = 1...
+	assert cpu.get_z() == true
+	assert cpu.pc == 0
+	cpu.tick(false)
+	cpu.tick(false)
+	cpu.tick(false)
+	// ... IR should equal 0xFF and PC should equal 0x43 (prefetch included).
+	assert cpu.ir == 0xFF
+	assert cpu.ir != 0xAA
+	assert cpu.pc == 0x43
+	assert cpu.cycles == 3
+}
+
+// 0x29 ADD HL,HL
+fn test_29_add_hl_hl() {
+	// 2 machine cycles, 1 byte
+	// C and H set by operation, N = 0
+	mut ram := &core.Ram{}
+	mut cpu := &core.Cpu{ram: ram}
+	cpu.ir = 0x29 // opcode: 0x29
+	cpu.l = 0x01
+	// Given HL = 0x0001...
+	assert cpu.pc == 0
+	assert cpu.h == 0x00
+	assert cpu.l == 0x01
+	cpu.tick(false)
+	cpu.tick(false)
+	assert cpu.pc == 1
+	// ... HL should equal 0x0002.
+	assert cpu.h == 0x00
+	assert cpu.l == 0x02
+	assert cpu.get_c() == false
+	assert cpu.get_h() == false
+	assert cpu.get_n() == false
+	assert cpu.cycles == 2
+}
+
+fn test_29_add_hl_hl_between_bytes() {
+	// 2 machine cycles, 1 byte
+	// C and H set by operation, N = 0
+	mut ram := &core.Ram{}
+	mut cpu := &core.Cpu{ram: ram}
+	cpu.ir = 0x29 // opcode: 0x29
+	cpu.l = 0xD2
+	// Given HL = 0x00D2...
+	assert cpu.pc == 0
+	assert cpu.h == 0x00
+	assert cpu.l == 0xD2
+	cpu.tick(false)
+	cpu.tick(false)
+	assert cpu.pc == 1
+	// ... HL should equal 0x01A4.
+	assert cpu.h == 0x01
+	assert cpu.l == 0xA4
+	// TODO: Check flag math
+	assert cpu.get_c() == false
+	assert cpu.get_h() == true
+	assert cpu.get_n() == false
+	assert cpu.cycles == 2
+}
+
+fn test_29_add_hl_hl_wrap() {
+	// 2 machine cycles, 1 byte
+	// C and H set by operation, N = 0
+	mut ram := &core.Ram{}
+	mut cpu := &core.Cpu{ram: ram}
+	cpu.ir = 0x29 // opcode: 0x29
+	cpu.h = 0xFF
+	cpu.l = 0xFF
+	// Given HL = 0xFFFF...
+	assert cpu.pc == 0
+	assert cpu.h == 0xFF
+	assert cpu.l == 0xFF
+	cpu.tick(false)
+	cpu.tick(false)
+	assert cpu.pc == 1
+	// ... HL should equal 0xFFFE.
+	assert cpu.h == 0xFF
+	assert cpu.l == 0xFE
+	// TODO: Check flag math
+	assert cpu.get_c() == true
+	assert cpu.get_h() == true
+	assert cpu.get_n() == false
+	assert cpu.cycles == 2
+}
+
+// 0x2A LD A,[HL+]
+fn test_2a_ld_a_hli() {
+	// 2 machine cycles, 1 byte
+	mut ram := &core.Ram{}
+	mut cpu := &core.Cpu{ram: ram}
+	cpu.ir = 0x2A // opcode: 0x2A
+	cpu.h = 0xBE
+	cpu.l = 0xEF
+	ram.memory[0xBEEF] = 0x42
+	// Given HL = 0xBEEF and RAM[0xBEEF] = 0x42...
+	assert cpu.pc == 0
+	assert cpu.h == 0xBE
+	assert cpu.l == 0xEF
+	assert ram.memory[0xBEEF] == 0x42
+	cpu.tick(false)
+	cpu.tick(false)
+	assert cpu.pc == 1
+	// ... A should equal 0x42 and HL should equal 0xBEF0.
+	assert cpu.a == 0x42
+	assert cpu.h == 0xBE
+	assert cpu.l == 0xF0
+	assert cpu.cycles == 2
+}
+
+// 0x2B DEC HL
+fn test_2b_dec_hl() {
+	// 2 machine cycles, 1 byte
+	mut ram := &core.Ram{}
+	mut cpu := &core.Cpu{ram: ram}
+	cpu.ir = 0x2B // opcode: 0x2B
+	cpu.l = 0x01
+	// Given HL = 1...
+	assert cpu.pc == 0
+	assert cpu.h == 0x00
+	assert cpu.l == 0x01
+	cpu.tick(false)
+	cpu.tick(false)
+	assert cpu.pc == 1
+	// ... HL should equal 0.
+	assert cpu.h == 0
+	assert cpu.l == 0
+	assert cpu.cycles == 2
+}
+
+fn test_2b_dec_hl_between_bytes() {
+	// 2 machine cycles, 1 byte
+	mut ram := &core.Ram{}
+	mut cpu := &core.Cpu{ram: ram}
+	cpu.ir = 0x2B // opcode: 0x2B
+	cpu.h = 0x01
+	// Given HL = 0x0100...
+	assert cpu.h == 0x01
+	assert cpu.l == 0x00
+	assert cpu.pc == 0
+	cpu.tick(false)
+	cpu.tick(false)
+	assert cpu.pc == 1
+	// ... HL should equal 0x00FF.
+	assert cpu.h == 0x00
+	assert cpu.l == 0xFF
+	assert cpu.cycles == 2
+}
+
+fn test_2b_dec_hl_wrap() {
+	// 2 machine cycles, 1 byte
+	mut ram := &core.Ram{}
+	mut cpu := &core.Cpu{ram: ram}
+	cpu.ir = 0x2B // opcode: 0x2B
+	// Given HL = 0x0000...
+	assert cpu.h == 0x00
+	assert cpu.l == 0x00
+	assert cpu.pc == 0
+	cpu.tick(false)
+	cpu.tick(false)
+	assert cpu.pc == 1
+	// ... HL should equal 0xFFFF.
+	assert cpu.h == 0xFF
+	assert cpu.l == 0xFF
+	assert cpu.cycles == 2
+}
+
+// 0x2C INC L
+fn test_2c_inc_l() {
+	// 1 machine cycle, 1 byte
+	// Z/H set by operation, N = 0
+	mut ram := &core.Ram{}
+	mut cpu := &core.Cpu{ram: ram}
+	cpu.ir = 0x2C // opcode: 0x2C
+	// Given L = 0x00...
+	assert cpu.l == 0x00
+	assert cpu.pc == 0
+	cpu.tick(false)
+	assert cpu.pc == 1
+	// ... L should equal 0x01.
+	assert cpu.l == 0x01
+	assert cpu.get_z() == false
+	assert cpu.get_h() == false
+	assert cpu.get_n() == false
+	assert cpu.cycles == 1
+}
+
+fn test_2c_inc_l_wrap_to_zero() {
+	// 1 machine cycle, 1 byte
+	// Z/H set by operation, N = 0
+	mut ram := &core.Ram{}
+	mut cpu := &core.Cpu{ram: ram}
+	cpu.ir = 0x2C // opcode: 0x2C
+	cpu.l = 0xFF
+	// Given L = 0xFF...
+	assert cpu.l == 0xFF
+	assert cpu.pc == 0
+	cpu.tick(false)
+	assert cpu.pc == 1
+	// ... L should equal 0x00.
+	assert cpu.l == 0x00
+	assert cpu.get_z() == true
+	assert cpu.get_h() == true
+	assert cpu.get_n() == false
+	assert cpu.cycles == 1
+}
+
+// 0x2D DEC L
+fn test_2d_dec_l() {
+	// 1 machine cycle, 1 byte
+	// Z/H set by operation, N = 1
+	mut ram := &core.Ram{}
+	mut cpu := &core.Cpu{ram: ram}
+	cpu.ir = 0x2D // opcode: 0x2D
+	cpu.l = 0x01
+	// Given L = 0x01...
+	assert cpu.l == 0x01
+	assert cpu.pc == 0
+	cpu.tick(false)
+	assert cpu.pc == 1
+	// ... L should equal 0x00.
+	assert cpu.l == 0x00
+	assert cpu.get_z() == true
+	assert cpu.get_h() == false
+	assert cpu.get_n() == true
+	assert cpu.cycles == 1
+}
+
+fn test_2d_dec_l_wrap() {
+	// 1 machine cycle, 1 byte
+	// Z/H set by operation, N = 1
+	mut ram := &core.Ram{}
+	mut cpu := &core.Cpu{ram: ram}
+	cpu.ir = 0x2D // opcode: 0x2D
+	// Given L = 0x00...
+	assert cpu.l == 0x00
+	assert cpu.pc == 0
+	cpu.tick(false)
+	assert cpu.pc == 1
+	// ... L should equal 0xFF.
+	assert cpu.l == 0xFF
+	assert cpu.get_z() == false
+	assert cpu.get_h() == true
+	assert cpu.get_n() == true
+	assert cpu.cycles == 1
+}
+
+// 0x2E LD L,D8
+fn test_2e_ld_l_d8() {
+	// 2 machine cycles, 2 bytes
+	mut ram := &core.Ram{}
+	mut cpu := &core.Cpu{ram: ram}
+	cpu.ir = 0x2E // opcode: 0x2E
+	ram.memory[0] = 0x42 // d8 = 0x42 (66)
+	// Given D8 = 0x42...
+	assert cpu.pc == 0
+	cpu.tick(false)
+	cpu.tick(false)
+	assert cpu.pc == 2
+	// ... L should equal 0x42.
+	assert cpu.l == 0x42
+	assert cpu.cycles == 2
+}
+
+// 0x2F CPL
+// TODO: Make test for CPL

@@ -355,6 +355,24 @@ pub fn (mut c Cpu) tick(pr bool) {
 						}
 					}
 				}
+				.r_hli {
+					if pr { println("ld: r,hli called (m=${c.m})") }
+					match c.m {
+						1 {
+							c.z = c.read_memory(c.read_reg16(RegisterType.hl))
+							c.set_hl(c.read_reg16(RegisterType.hl) + 1)
+						}
+						2 {
+							c.ir = c.fetch_cycle(c.pc)
+							c.pc++
+							c.set_reg8(RegisterType.a, c.z)
+							c.m = 0
+						}
+						else {
+							println("ld: r,hli mode: invalid cycle ${c.m}")
+						}
+					}
+				}
 				.hld_r {
 					if pr { println("ld hld,r called (m=${c.m})") }
 					match c.m {

@@ -168,7 +168,7 @@ const instructions = [
 	Instruction{in_type: InstructionType.ld, mode: AddressMode.hld_r, reg_1: RegisterType.hl, reg_2: RegisterType.a}, // 0x32 LD [HL-],A
 	Instruction{in_type: InstructionType.inc, mode: AddressMode.r, reg_1: RegisterType.sp}, // 0x33 INC SP
 	Instruction{in_type: InstructionType.inc, mode: AddressMode.mr, reg_1: RegisterType.hl}, // 0x34 INC [HL]
-	Instruction{in_type: InstructionType.dec, mode: AddressMode.mr, reg_1: RegisterType.hl}, // 0x35 DEC [Hl]
+	Instruction{in_type: InstructionType.dec, mode: AddressMode.mr, reg_1: RegisterType.hl}, // 0x35 DEC [HL]
 	Instruction{in_type: InstructionType.ld, mode: AddressMode.mr_d8, reg_1: RegisterType.hl}, // 0x36 LD [HL],D8
 	Instruction{in_type: InstructionType.scf}, // 0x37 SCF
 	Instruction{in_type: InstructionType.jr, mode: AddressMode.d8, reg_1: RegisterType.none, reg_2: RegisterType.none, cond: ConditionType.c}, // 0x38 JR C,D8

@@ -373,6 +373,24 @@ pub fn (mut c Cpu) tick(pr bool) {
 						}
 					}
 				}
+				.r_hld {
+					if pr { println("ld: r,hld called (m=${c.m})") }
+					match c.m {
+						1 {
+							c.z = c.read_memory(c.read_reg16(RegisterType.hl))
+							c.set_hl(c.read_reg16(RegisterType.hl) - 1)
+						}
+						2 {
+							c.ir = c.fetch_cycle(c.pc)
+							c.pc++
+							c.set_reg8(RegisterType.a, c.z)
+							c.m = 0
+						}
+						else {
+							println("ld: r,hld mode: invalid cycle ${c.m}")
+						}
+					}
+				}
 				.hld_r {
 					if pr { println("ld hld,r called (m=${c.m})") }
 					match c.m {
@@ -397,6 +415,26 @@ pub fn (mut c Cpu) tick(pr bool) {
 					c.pc++
 					c.set_reg8(next_inst.reg_1, c.read_reg8(next_inst.reg_2))
 					c.m = 0
+				}
+				.mr_d8 {
+					if pr { println("ld mr,d8 called") }
+					match c.m {
+						1 {
+							c.z = c.read_memory(c.read_reg16(RegisterType.pc))
+							c.pc++
+						}
+						2 {
+							c.write_memory(c.read_reg16(RegisterType.hl), c.z)
+						}
+						3 {
+							c.ir = c.fetch_cycle(c.pc)
+							c.pc++
+							c.m = 0
+						}
+						else {
+							println("ld: mr,d8 mode: invalid cycle ${c.m}")
+						}
+					}
 				}
 				else {
 					println("ld: invalid mode ${next_inst.mode}")
@@ -440,10 +478,29 @@ pub fn (mut c Cpu) tick(pr bool) {
 							println("inc: r mode: invalid register ${next_inst.reg_1}")
 						}
 					}
-
 				}
 				.mr {
-					println("inc: mr mode: not implemented")
+					if pr { println("inc mr called (m=${c.m})") }
+					match c.m {
+						1 {
+							c.z = c.read_memory(c.read_reg16(RegisterType.hl))
+						}
+						2 {
+							result := c.z + 1
+							c.write_memory(c.read_reg16(RegisterType.hl), result)
+							c.set_z(result == 0)
+							c.set_n(false)
+							c.set_h((result & 0x0f) == 0)
+						}
+						3 {
+							c.ir = c.fetch_cycle(c.pc)
+							c.pc++
+							c.m = 0
+						}
+						else {
+							println("inc: mr mode: invalid cycle ${c.m}")
+						}
+					}
 				}
 				else {
 					println("inc: invalid mode ${next_inst.mode}")
@@ -488,7 +545,27 @@ pub fn (mut c Cpu) tick(pr bool) {
 					}
 				}
 				.mr {
-					println("dec: mr mode: not implemented")
+					if pr { println("dec mr called (m=${c.m})") }
+					match c.m {
+						1 {
+							c.z = c.read_memory(c.read_reg16(RegisterType.hl))
+						}
+						2 {
+							result := c.z - 1
+							c.write_memory(c.read_reg16(RegisterType.hl), result)
+							c.set_z(result == 0)
+							c.set_n(true)
+							c.set_h((result & 0x0f) == 0x0f)
+						}
+						3 {
+							c.ir = c.fetch_cycle(c.pc)
+							c.pc++
+							c.m = 0
+						}
+						else {
+							println("dec: mr mode: invalid cycle ${c.m}")
+						}
+					}
 				}
 				else {
 					println("dec: invalid mode ${next_inst.mode}")

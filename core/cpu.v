@@ -26,6 +26,26 @@ pub mut:
 	w u8
 }
 
+pub fn (mut c Cpu) reset(opcode u8) {
+	c.a = 0
+	c.f = 0
+	c.b = 0
+	c.c = 0
+	c.d = 0
+	c.e = 0
+	c.h = 0
+	c.l = 0
+	c.ir = opcode
+	c.ie = 0
+	c.sp = 0
+	c.pc = 0
+	c.cycles = 0
+	c.m = 1
+	c.cb = 0
+	c.z = 0
+	c.w = 0
+}
+
 pub fn (c Cpu) str() string {
 	return '{a=${c.a}, f=${c.f}, b=${c.b}, c=${c.c}, d=${c.d}, e=${c.e}, h=${c.h}, l=${c.l}, ir=${c.ir}/0x${c.ir:x}, ie=${c.ie}, sp=${c.sp}/0x${c.sp:x}, pc=${c.pc}/0x${c.pc:x}, m=${c.m}, flags(ZNHC)=${u8(c.get_z())}${u8(c.get_n())}${u8(c.get_h())}${u8(c.get_c())}}'
 }

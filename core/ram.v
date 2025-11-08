@@ -10,6 +10,12 @@ pub mut:
 	// memory [0x100]u8
 }
 
+pub fn (mut r Ram) reset() {
+	for mut b in r.memory {
+		b = 0
+	}
+}
+
 fn (mut r Ram) load_boot_rom() {
 	rom := os.read_file_array[u8]("./assets/DMG_ROM.bin")
 	for index, byte in rom {

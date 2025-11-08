@@ -12,6 +12,59 @@ module core
 // - ADD HL,rr
 // - ADD A,r
 
+fn init_test(opcode u8) (&core.Ram, &core.Cpu) {
+	mut ram := &core.Ram{}
+	mut cpu := &core.Cpu{ram: ram}
+	cpu.ir = opcode
+	return ram, cpu
+}
+
+fn run_instruction(num_cycles u8, mut cpu &core.Cpu) {
+	mut i := 0
+	for i < num_cycles {
+		cpu.tick(false)
+		i++
+	}
+}
+fn finish_test(expected_cycles u8, expected_bytes u8, cpu &core.Cpu) {
+	assert cpu.pc == expected_bytes
+	assert cpu.cycles == expected_cycles
+}
+
+fn inc_8bit(r RegisterType, opcode u8) {
+	// normal test
+	// 1 machine cycle, 1 byte
+	// Z/H set by operation, N = 0
+	mut ram, mut cpu := init_test(opcode)
+	// Given B = 0x00...
+	assert cpu.b == 0x00
+	assert cpu.pc == 0
+	run_instruction(1, mut cpu)
+	// ... B should equal 0x01.
+	assert cpu.b == 0x01
+	assert cpu.get_z() == false
+	assert cpu.get_h() == false
+	assert cpu.get_n() == false
+	finish_test(1, 1, cpu)
+
+	// wrap test
+	// 1 machine cycle, 1 byte
+	// Z/H set by operation, N = 0
+	ram.reset()
+	cpu.reset(opcode)
+	cpu.b = 0xFF
+	// Given B = 0xFF...
+	assert cpu.b == 0xFF
+	assert cpu.pc == 0
+	run_instruction(1, mut cpu)
+	// ... B should equal 0x00.
+	assert cpu.b == 0x00
+	assert cpu.get_z() == true
+	assert cpu.get_h() == true
+	assert cpu.get_n() == false
+	finish_test(1, 1, cpu)
+}
+
 // 0x00 NOP
 fn test_00_nop() {
 	// 1 machine cycle, 1 byte
@@ -128,43 +181,44 @@ fn test_03_inc_bc_wrap() {
 
 // 0x04 INC B
 fn test_04_inc_b() {
-	// 1 machine cycle, 1 byte
-	// Z/H set by operation, N = 0
-	mut ram := &core.Ram{}
-	mut cpu := &core.Cpu{ram: ram}
-	cpu.ir = 0x04 // opcode: 0x04
-	// Given B = 0x00...
-	assert cpu.b == 0x00
-	assert cpu.pc == 0
-	cpu.tick(false)
-	assert cpu.pc == 1
-	// ... B should equal 0x01.
-	assert cpu.b == 0x01
-	assert cpu.get_z() == false
-	assert cpu.get_h() == false
-	assert cpu.get_n() == false
-	assert cpu.cycles == 1
+	inc_8bit(RegisterType.b, 0x04)
+	// // 1 machine cycle, 1 byte
+	// // Z/H set by operation, N = 0
+	// mut ram := &core.Ram{}
+	// mut cpu := &core.Cpu{ram: ram}
+	// cpu.ir = 0x04 // opcode: 0x04
+	// // Given B = 0x00...
+	// assert cpu.b == 0x00
+	// assert cpu.pc == 0
+	// cpu.tick(false)
+	// assert cpu.pc == 1
+	// // ... B should equal 0x01.
+	// assert cpu.b == 0x01
+	// assert cpu.get_z() == false
+	// assert cpu.get_h() == false
+	// assert cpu.get_n() == false
+	// assert cpu.cycles == 1
 }
 
-fn test_04_inc_b_wrap_to_zero() {
-	// 1 machine cycle, 1 byte
-	// Z/H set by operation, N = 0
-	mut ram := &core.Ram{}
-	mut cpu := &core.Cpu{ram: ram}
-	cpu.ir = 0x04 // opcode: 0x04
-	cpu.b = 0xFF
-	// Given B = 0xFF...
-	assert cpu.b == 0xFF
-	assert cpu.pc == 0
-	cpu.tick(false)
-	assert cpu.pc == 1
-	// ... B should equal 0x00.
-	assert cpu.b == 0x00
-	assert cpu.get_z() == true
-	assert cpu.get_h() == true
-	assert cpu.get_n() == false
-	assert cpu.cycles == 1
-}
+// fn test_04_inc_b_wrap_to_zero() {
+// 	// 1 machine cycle, 1 byte
+// 	// Z/H set by operation, N = 0
+// 	mut ram := &core.Ram{}
+// 	mut cpu := &core.Cpu{ram: ram}
+// 	cpu.ir = 0x04 // opcode: 0x04
+// 	cpu.b = 0xFF
+// 	// Given B = 0xFF...
+// 	assert cpu.b == 0xFF
+// 	assert cpu.pc == 0
+// 	cpu.tick(false)
+// 	assert cpu.pc == 1
+// 	// ... B should equal 0x00.
+// 	assert cpu.b == 0x00
+// 	assert cpu.get_z() == true
+// 	assert cpu.get_h() == true
+// 	assert cpu.get_n() == false
+// 	assert cpu.cycles == 1
+// }
 
 // 0x05 DEC B
 fn test_05_dec_b() {

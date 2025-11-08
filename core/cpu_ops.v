@@ -42,6 +42,14 @@ enum RegisterType as u8 {
 	pc
 }
 
+fn (r RegisterType) is_16bit() bool {
+	return r in [RegisterType.af, RegisterType.bc, RegisterType.de, RegisterType.hl, RegisterType.sp, RegisterType.pc]
+}
+
+fn (r RegisterType) is_8bit() bool {
+	return r in [RegisterType.a, RegisterType.f, RegisterType.b, RegisterType.c, RegisterType.d, RegisterType.e, RegisterType.h, RegisterType.l]
+}
+
 const register_lookup := [
 	RegisterType.b,
 	RegisterType.c,
